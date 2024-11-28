@@ -47,18 +47,16 @@
     box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
   }
   
-  /* Button States */
   .displaced-button.safe {
-    background-color: #28a745;
+    background-color: #28a745; /* Green */
   }
   
   .displaced-button.displaced {
-    background-color: #dc3545;
+    background-color: #dc3545; /* Red */
   }
   
-  /* Button Animation on Click */
   .displaced-button:active {
     transform: scale(0.95);
     box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.2);
-  }
+  }  
   

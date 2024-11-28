@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import "./App.css";
 import Hub from "./Pages/Hub";
+import Login from "./Pages/Login";
 
 function App() {
   const [formData, setFormData] = useState({
@@ -21,6 +22,7 @@ function App() {
   });
 
   const [submitted, setSubmitted] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
   
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -78,6 +80,10 @@ function App() {
       alert("Failed to submit form.");
     }
   };
+
+  if (showLogin) {
+    return <Login />;
+  }
 
   if (submitted) {
     return <Hub formData={formData} />;
@@ -289,7 +295,9 @@ function App() {
             Continue
           </button>
         </form>
-        <button className="btn-member">Already a Member?</button>
+        <button className="btn-member" onClick={() => setShowLogin(true)}>
+          Already a Member?
+        </button>
       </section>
     </div>
   );

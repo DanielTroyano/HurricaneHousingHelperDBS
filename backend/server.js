@@ -49,7 +49,7 @@ app.post("/api/add-member", (req, res) => {
     const addHouseSQL = `
       INSERT INTO Houses (address, guardian_ssn, house_total_space, is_destroyed)
       VALUES (?, NULL, ?, FALSE)
-      ON DUPLICATE KEY UPDATE house_total_space = house_total_space;
+      ON DUPLICATE KEY UPDATE house_total_space = VALUES(house_total_space);
     `;
   
     const addMemberSQL = `
@@ -64,58 +64,57 @@ app.post("/api/add-member", (req, res) => {
       UPDATE Houses SET guardian_ssn = ? WHERE address = ?;
     `;
   
-    // Insert the house first
-    db.query(
-      addHouseSQL,
-      [currentAddress, houseTotalSpace],
-      (err) => {
-        if (err) {
-          console.error("Error inserting house data:", err);
-          return res.status(500).send(`Failed to add house. ${err.message}`);
-        }
+    // Ensure dependents are serialized as JSON
+    const serializedDependents =
+  Array.isArray(dependents) && dependents.length > 0
+    ? JSON.stringify(dependents)
+    : '[]';
+
   
-        // Insert the member
-        db.query(
-          addMemberSQL,
-          [
-            firstName,
-            lastName,
-            email,
-            password,
-            ssn,
-            dob,
-            familySize,
-            currentAddress,
-            isHeadOfHousehold ? 1 : 0,
-            JSON.stringify(dependents),
-          ],
-          (err) => {
+    // Insert the house first
+    db.query(addHouseSQL, [currentAddress, houseTotalSpace], (err) => {
+      if (err) {
+        console.error("Error inserting house data:", err);
+        return res.status(500).send(`Failed to add house. ${err.message}`);
+      }
+  
+      // Insert the member
+      db.query(
+        addMemberSQL,
+        [
+          firstName,
+          lastName,
+          email,
+          password,
+          ssn,
+          dob,
+          familySize,
+          currentAddress,
+          isHeadOfHousehold ? 1 : 0,
+          serializedDependents,
+        ],
+        (err) => {
+          if (err) {
+            console.error("Error inserting member data:", err);
+            return res.status(500).send(`Failed to add member. ${err.message}`);
+          }
+  
+          // Update the house with the guardian_ssn
+          db.query(updateHouseSQL, [ssn, currentAddress], (err) => {
             if (err) {
-              console.error("Error inserting member data:", err);
-              return res.status(500).send(`Failed to add member. ${err.message}`);
+              console.error("Error updating house data:", err);
+              return res.status(500).send(`Failed to update house. ${err.message}`);
             }
   
-            // Update the house with the guardian_ssn
-            db.query(
-              updateHouseSQL,
-              [ssn, currentAddress],
-              (err) => {
-                if (err) {
-                  console.error("Error updating house data:", err);
-                  return res
-                    .status(500)
-                    .send(`Failed to update house. ${err.message}`);
-                }
-  
-                res.status(200).send("Member and house added successfully!");
-              }
-            );
-          }
-        );
-      }
-    );
+            res.status(200).send("Member and house added successfully!");
+          });
+        }
+      );
+    });
   });
   
+  
+// Endpoint to toggle a member's displaced status
 app.post("/api/toggle-displaced", (req, res) => {
   const { ssn, isDisplaced } = req.body;
 
@@ -135,6 +134,40 @@ app.post("/api/toggle-displaced", (req, res) => {
   });
 });
 
+// Endpoint to login a member
+app.post("/api/login", (req, res) => {
+    const { email, password } = req.body;
+  
+    const sql = `
+      SELECT * FROM HHH_Members
+      WHERE email = ? AND password = ?
+    `;
+  
+    db.query(sql, [email, password], (err, results) => {
+      if (err) {
+        console.error("Error during login:", err);
+        return res.status(500).send("Login failed.");
+      }
+  
+      if (results.length > 0) {
+        const user = results[0];
+  
+        // Safely parse dependents if it exists
+        try {
+          console.log("Raw dependents data before parsing:", user.dependents);
+          user.dependents = user.dependents ? JSON.parse(user.dependents) : [];
+        } catch (parseError) {
+          console.error("Error parsing dependents:", parseError);
+          user.dependents = [];
+        }
+  
+        res.status(200).send({ success: true, user });
+      } else {
+        res.status(401).send({ success: false });
+      }
+    });
+  });
+  
 
 // Start the server
 app.listen(port, () => {

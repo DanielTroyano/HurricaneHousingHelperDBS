@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import axios from "axios";
-import "../CSS/Hub.css"; // Create this CSS file for custom styling.
+import "../CSS/Hub.css"; // Assuming you have this CSS file for styling.
 
 function Hub({ formData }) {
-  const [isDisplaced, setIsDisplaced] = useState(false);
+  const dependents = formData.dependents || [];
+
+  const [isDisplaced, setIsDisplaced] = useState(formData.is_displaced || false);
 
   const handleToggleDisplaced = async () => {
     try {
@@ -22,13 +24,13 @@ function Hub({ formData }) {
     <div className="hub-container">
       <div className="hub-header">
         <h1>
-          Hello {formData.firstName} {formData.lastName},
+          Hello {formData.firstName || formData.first_name} {formData.lastName || formData.last_name},
         </h1>
         <p>
           Our goal is to ensure that you
-          {formData.dependents.length > 0 &&
-            ` and ${formData.dependents
-              .map((dep) => dep.firstName)
+          {dependents.length > 0 &&
+            ` and ${dependents
+              .map((dep) => dep.firstName || dep.first_name)
               .join(", ")}`}{" "}
           are safe!
         </p>
