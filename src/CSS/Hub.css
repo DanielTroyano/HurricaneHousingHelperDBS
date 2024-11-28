@@ -1,0 +1,64 @@
+/* Container Styles */
+.hub-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin: 20px auto;
+    max-width: 800px;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Header Styling */
+  .hub-header {
+    margin-bottom: 20px;
+  }
+  
+  .hub-header h1 {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    color: #333;
+  }
+  
+  .hub-header p {
+    font-size: 1.2rem;
+    color: #555;
+  }
+  
+  /* Button Container */
+  .hub-action {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+  }
+  
+  /* Button Styling */
+  .displaced-button {
+    padding: 15px 40px;
+    font-size: 1.5rem;
+    border: none;
+    border-radius: 30px;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Button States */
+  .displaced-button.safe {
+    background-color: #28a745;
+  }
+  
+  .displaced-button.displaced {
+    background-color: #dc3545;
+  }
+  
+  /* Button Animation on Click */
+  .displaced-button:active {
+    transform: scale(0.95);
+    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.2);
+  }
+  

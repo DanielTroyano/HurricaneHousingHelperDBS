@@ -1,6 +1,9 @@
+//npm start
+
 import React, { useState } from "react";
 import axios from "axios";
 import "./App.css";
+import Hub from "./Pages/Hub";
 
 function App() {
   const [formData, setFormData] = useState({
@@ -12,10 +15,13 @@ function App() {
     dob: "",
     familySize: 0,
     currentAddress: "",
-    isHeadOfHousehold: false,
+    houseTotalSpace: 0, // New field
+    isHeadOfHousehold: true,
     dependents: [],
   });
 
+  const [submitted, setSubmitted] = useState(false);
+  
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -66,11 +72,16 @@ function App() {
         formData
       );
       alert(response.data);
+      setSubmitted(true);
     } catch (error) {
       console.error("Error submitting form:", error);
       alert("Failed to submit form.");
     }
   };
+
+  if (submitted) {
+    return <Hub formData={formData} />;
+  }
 
   return (
     <div className="app-container">
@@ -175,6 +186,16 @@ function App() {
             />
           </label>
           <label>
+          Total Space of the House:
+          <input
+            type="number"
+            name="houseTotalSpace"
+            value={formData.houseTotalSpace}
+            onChange={handleChange}
+            required
+          />
+        </label>
+          <label>
             Are you the head of household?
             <select
               name="isHeadOfHousehold"
@@ -259,7 +280,7 @@ function App() {
                 className="btn-add"
                 onClick={addDependent}
               >
-                Add Another Dependent
+                Add Dependent
               </button>
             </div>
           )}
