@@ -37,13 +37,20 @@ function Update() {
 
         const userData = await response.json();
 
+        console.log("Fetched user data:", userData); // Debugging line
+
+        // Convert DOB to YYYY-MM-DD format for the input field
+        const dobParts = userData.dob.split("/");
+        const formattedDob = `${dobParts[2]}-${dobParts[0].padStart(2, "0")}-${dobParts[1].padStart(2, "0")}`;
+
+        // Set all formData fields, including the formatted DOB
         setFormData({
           firstName: userData.first_name,
           lastName: userData.last_name,
           email: userData.email,
           password: userData.password,
           ssn: userData.ssn,
-          dob: userData.dob,
+          dob: formattedDob,
           familySize: userData.family_size,
           currentAddress: userData.current_address,
           houseTotalSpace: userData.house_total_space,
@@ -90,11 +97,18 @@ function Update() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Convert DOB to YYYY-MM-DD before sending
+    const formattedDob = new Date(formData.dob).toISOString().split("T")[0];
+
     try {
       const response = await fetch("http://localhost:8000/api/update-member", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          dob: formattedDob, // Send the formatted date
+        }),
       });
 
       if (!response.ok) throw new Error("Failed to update user information");

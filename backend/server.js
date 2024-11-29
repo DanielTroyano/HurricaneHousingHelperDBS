@@ -155,7 +155,6 @@ app.post("/api/login", (req, res) => {
    });
 });
  
-// Endpoint to fetch user data by email
 app.get("/api/user-by-email/:email", (req, res) => {
   const { email } = req.params;
 
@@ -175,7 +174,10 @@ app.get("/api/user-by-email/:email", (req, res) => {
     if (results.length > 0) {
       const user = results[0];
 
-      // Parse dependents if they exist
+      // Convert DOB to MM/DD/YYYY format for display
+      const dob = new Date(user.dob);
+      user.dob = `${dob.getMonth() + 1}/${dob.getDate()}/${dob.getFullYear()}`;
+
       try {
         user.dependents = user.dependents ? JSON.parse(user.dependents) : [];
       } catch (parseError) {
@@ -189,6 +191,8 @@ app.get("/api/user-by-email/:email", (req, res) => {
     }
   });
 });
+
+
 
 // Start the server
 app.listen(port, () => {
