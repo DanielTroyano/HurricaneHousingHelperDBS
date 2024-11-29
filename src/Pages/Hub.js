@@ -5,6 +5,7 @@ import "../CSS/Hub.css"; // Assuming you have this CSS file for styling.
 function Hub({ formData }) {
   const dependents = formData.dependents || [];
 
+  const [showDropdown, setShowDropdown] = useState(false);
   const [isDisplaced, setIsDisplaced] = useState(formData.is_displaced || false);
 
   const handleToggleDisplaced = async () => {
@@ -20,8 +21,37 @@ function Hub({ formData }) {
     }
   };
 
+  const toggleDropdown = () => {
+    setShowDropdown(!showDropdown); // Toggle dropdown visibility
+  };
+
+  const navigateToUpdate = () => {
+  window.location.href = "/Update"; // Navigate to the update page
+  };
+  
   return (
     <div className="hub-container">
+      {/* adding in profile pic*/}
+      <div className="profile-button">
+        <button onClick={toggleDropdown}>
+          <img
+          src={formData.profilePicture || "/profilepic.jpg"}
+          alt="Profile"
+          className="profile-pic"
+          />
+        </button>
+        {showDropdown && (
+          <div className="dropdown-menu">
+            <ul>
+              <button className="update-button" onClick={navigateToUpdate}>
+                <li>Update Information</li>
+              </button>
+            </ul>
+          </div>
+        )}
+      </div>
+      {/*  */}
+      
       <div className="hub-header">
         <h1>
           Hello {formData.firstName || formData.first_name} {formData.lastName || formData.last_name},

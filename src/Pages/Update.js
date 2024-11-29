@@ -1,13 +1,8 @@
-//npm start
-
 import React, { useState } from "react";
-import axios from "axios";
-import "./App.css";
-import Hub from "./Pages/Hub";
-import Login from "./Pages/Login";
-import Update from "./Pages/Update";
+import "../CSS/Update.css"; // Add specific styles if needed
 
-function App() {
+function Update() {
+  // State for managing form data
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -17,19 +12,18 @@ function App() {
     dob: "",
     familySize: 0,
     currentAddress: "",
-    houseTotalSpace: 0, // New field
+    houseTotalSpace: 0,
     isHeadOfHousehold: true,
     dependents: [],
   });
 
-  const [submitted, setSubmitted] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
-  
+  // Event handler for input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
+  // Add a dependent
   const addDependent = () => {
     setFormData({
       ...formData,
@@ -40,80 +34,34 @@ function App() {
     });
   };
 
+  // Update a dependent’s information
   const updateDependent = (index, field, value) => {
     const updatedDependents = [...formData.dependents];
     updatedDependents[index][field] = value;
     setFormData({ ...formData, dependents: updatedDependents });
   };
 
+  // Remove a dependent
   const removeDependent = (index) => {
     const updatedDependents = formData.dependents.filter((_, i) => i !== index);
     setFormData({ ...formData, dependents: updatedDependents });
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Basic validation
-    if (
-      !formData.firstName ||
-      !formData.lastName ||
-      !formData.email ||
-      !formData.password ||
-      !formData.ssn ||
-      !formData.dob ||
-      !formData.familySize ||
-      !formData.currentAddress
-    ) {
-      alert("Please fill out all required fields.");
-      return;
-    }
-
-    try {
-      const response = await axios.post(
-        "http://localhost:8000/api/add-member",
-        formData
-      );
-      alert(response.data);
-      setSubmitted(true);
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      alert("Failed to submit form.");
-    }
   };
 
-  if (window.location.pathname === "/Update") {
-    return <Update />;
-  }
-
-  if (showLogin) {
-    return <Login />;
-  }
-
-  if (submitted) {
-    return <Hub formData={formData} />;
-  }
-
   return (
-    <div className="app-container">
+    <div className="update-container">
       {/* Banner */}
-      <header className="app-header">
+      <header className="update-header">
         <h1>Hurricane Housing Helper</h1>
       </header>
 
-      {/* Welcome Message */}
-      <section className="app-welcome">
-        <p>
-          Welcome to the Hurricane Housing Helper program. In times of natural
-          disasters, we connect people who can offer help with those in need.
-          If your house is safe, you can volunteer to help others. If you're in
-          need, we’re here to ensure help reaches you.
-        </p>
-      </section>
-
-      {/* Enrollment Form */}
-      <section className="app-form">
-        <h2>Join the Program</h2>
+      {/* Update Form */}
+      <section className="update-form">
+        <h2>Update Account Information</h2>
         <form onSubmit={handleSubmit}>
           {/* User Details */}
           <label>
@@ -197,15 +145,15 @@ function App() {
             />
           </label>
           <label>
-          Total Space of the House:
-          <input
-            type="number"
-            name="houseTotalSpace"
-            value={formData.houseTotalSpace}
-            onChange={handleChange}
-            required
-          />
-        </label>
+            Total Space of the House:
+            <input
+              type="number"
+              name="houseTotalSpace"
+              value={formData.houseTotalSpace}
+              onChange={handleChange}
+              required
+            />
+          </label>
           <label>
             Are you the head of household?
             <select
@@ -225,7 +173,7 @@ function App() {
 
           {/* Dependents Section */}
           {formData.isHeadOfHousehold && (
-            <div className="dependents-section">
+            <div className="update-dependents-section">
               <h3>Dependents</h3>
               {formData.dependents.map((dependent, index) => (
                 <div key={index} className="dependent">
@@ -287,25 +235,20 @@ function App() {
                 </div>
               ))}
               <button
-                type="button"
-                className="btn-add"
-                onClick={addDependent}
-              >
+               type="button" 
+               className="btn-add"
+               onClick={addDependent}>
                 Add Dependent
               </button>
             </div>
           )}
 
-          <button type="submit" className="btn-continue">
-            Continue
-          </button>
+          <button type="submit">Save Changes</button>
         </form>
-        <button className="btn-member" onClick={() => setShowLogin(true)}>
-          Already a Member?
-        </button>
       </section>
     </div>
   );
 }
 
-export default App;
+export default Update;
+
