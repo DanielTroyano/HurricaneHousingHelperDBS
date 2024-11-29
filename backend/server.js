@@ -160,7 +160,10 @@ app.get("/api/user-by-email/:email", (req, res) => {
   const { email } = req.params;
 
   const sql = `
-    SELECT * FROM HHH_Members WHERE email = ?;
+  SELECT HHH_Members.*, Houses.house_total_space
+  FROM HHH_Members
+  LEFT JOIN Houses ON HHH_Members.current_address = Houses.address
+  WHERE HHH_Members.email = ?;
   `;
 
   db.query(sql, [email], (err, results) => {
