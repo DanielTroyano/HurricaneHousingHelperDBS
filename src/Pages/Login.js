@@ -18,6 +18,7 @@ function Login() {
       });
 
       if (response.data.success) {
+        localStorage.setItem("userEmail", email);//Only change I have done in this file
         setFormData(response.data.user); // Set the user data
       } else {
         setError("Invalid email or password.");

@@ -1,13 +1,7 @@
-//npm start
+import React, { useState, useEffect } from "react";
+import "../CSS/Update.css"; // Ensure CSS is applied
 
-import React, { useState } from "react";
-import axios from "axios";
-import "./App.css";
-import Hub from "./Pages/Hub";
-import Login from "./Pages/Login";
-import Update from "./Pages/Update";
-
-function App() {
+function Update() {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -17,14 +11,64 @@ function App() {
     dob: "",
     familySize: 0,
     currentAddress: "",
-    houseTotalSpace: 0, // New field
+    houseTotalSpace: 0,
     isHeadOfHousehold: true,
     dependents: [],
   });
 
-  const [submitted, setSubmitted] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
-  
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const userEmail = localStorage.getItem("userEmail");
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!userEmail) {
+        setError("Email not found. Please log in.");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `http://localhost:8000/api/user-by-email/${userEmail}`
+        );
+        if (!response.ok) throw new Error("Failed to fetch user data");
+
+        const userData = await response.json();
+
+        console.log("Fetched user data:", userData); // Debugging line
+
+        // Convert DOB to YYYY-MM-DD format for the input field
+        const dobParts = userData.dob.split("/");
+        const formattedDob = `${dobParts[2]}-${dobParts[0].padStart(2, "0")}-${dobParts[1].padStart(2, "0")}`;
+
+        // Set all formData fields, including the formatted DOB
+        setFormData({
+          firstName: userData.first_name,
+          lastName: userData.last_name,
+          email: userData.email,
+          password: userData.password,
+          ssn: userData.ssn,
+          dob: formattedDob,
+          familySize: userData.family_size,
+          currentAddress: userData.current_address,
+          houseTotalSpace: userData.house_total_space,
+          isHeadOfHousehold: Boolean(userData.is_head_of_household),
+          dependents: userData.dependents || [],
+        });
+
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [userEmail]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -54,68 +98,40 @@ function App() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Basic validation
-    if (
-      !formData.firstName ||
-      !formData.lastName ||
-      !formData.email ||
-      !formData.password ||
-      !formData.ssn ||
-      !formData.dob ||
-      !formData.familySize ||
-      !formData.currentAddress
-    ) {
-      alert("Please fill out all required fields.");
-      return;
-    }
+    // Convert DOB to YYYY-MM-DD before sending
+    const formattedDob = new Date(formData.dob).toISOString().split("T")[0];
 
     try {
-      const response = await axios.post(
-        "http://localhost:8000/api/add-member",
-        formData
-      );
-      alert(response.data);
-      setSubmitted(true);
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      alert("Failed to submit form.");
+      const response = await fetch("http://localhost:8000/api/update-member", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...formData,
+          dob: formattedDob, // Send the formatted date
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to update user information");
+      alert("Information updated successfully!");
+    } catch (err) {
+      alert(`Error: ${err.message}`);
     }
   };
 
-  if (window.location.pathname === "/Update") {
-    return <Update />;
-  }
-
-  if (showLogin) {
-    return <Login />;
-  }
-
-  if (submitted) {
-    return <Hub formData={formData} />;
-  }
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error: {error}</p>;
 
   return (
-    <div className="app-container">
+    <div className="update-container">
       {/* Banner */}
-      <header className="app-header">
+      <header className="update-header">
         <h1>Hurricane Housing Helper</h1>
       </header>
 
-      {/* Welcome Message */}
-      <section className="app-welcome">
-        <p>
-          Welcome to the Hurricane Housing Helper program. In times of natural
-          disasters, we connect people who can offer help with those in need.
-          If your house is safe, you can volunteer to help others. If you're in
-          need, we’re here to ensure help reaches you.
-        </p>
-      </section>
-
-      {/* Enrollment Form */}
-      <section className="app-form">
-        <h2>Join the Program</h2>
+      {/* Update Form */}
+      <section className="update-form">
+        <h2>Update Account Information</h2>
         <form onSubmit={handleSubmit}>
-          {/* User Details */}
           <label>
             First Name:
             <input
@@ -124,6 +140,7 @@ function App() {
               value={formData.firstName}
               onChange={handleChange}
               required
+              className="form-input"
             />
           </label>
           <label>
@@ -134,6 +151,7 @@ function App() {
               value={formData.lastName}
               onChange={handleChange}
               required
+              className="form-input"
             />
           </label>
           <label>
@@ -144,6 +162,7 @@ function App() {
               value={formData.email}
               onChange={handleChange}
               required
+              className="form-input"
             />
           </label>
           <label>
@@ -154,6 +173,7 @@ function App() {
               value={formData.password}
               onChange={handleChange}
               required
+              className="form-input"
             />
           </label>
           <label>
@@ -165,6 +185,7 @@ function App() {
               onChange={handleChange}
               maxLength="11"
               required
+              className="form-input"
             />
           </label>
           <label>
@@ -175,6 +196,7 @@ function App() {
               value={formData.dob}
               onChange={handleChange}
               required
+              className="form-input"
             />
           </label>
           <label>
@@ -185,6 +207,7 @@ function App() {
               value={formData.familySize}
               onChange={handleChange}
               required
+              className="form-input"
             />
           </label>
           <label>
@@ -194,18 +217,20 @@ function App() {
               value={formData.currentAddress}
               onChange={handleChange}
               required
+              className="form-textarea"
             />
           </label>
           <label>
-          Total Space of the House:
-          <input
-            type="number"
-            name="houseTotalSpace"
-            value={formData.houseTotalSpace}
-            onChange={handleChange}
-            required
-          />
-        </label>
+            Total Space of the House:
+            <input
+              type="number"
+              name="houseTotalSpace"
+              value={formData.houseTotalSpace}
+              onChange={handleChange}
+              required
+              className="form-input"
+            />
+          </label>
           <label>
             Are you the head of household?
             <select
@@ -217,15 +242,15 @@ function App() {
                   isHeadOfHousehold: e.target.value === "Yes",
                 })
               }
+              className="form-select"
             >
               <option value="No">No</option>
               <option value="Yes">Yes</option>
             </select>
           </label>
 
-          {/* Dependents Section */}
           {formData.isHeadOfHousehold && (
-            <div className="dependents-section">
+            <div className="update-dependents-section">
               <h3>Dependents</h3>
               {formData.dependents.map((dependent, index) => (
                 <div key={index} className="dependent">
@@ -239,6 +264,7 @@ function App() {
                         updateDependent(index, "firstName", e.target.value)
                       }
                       required
+                      className="form-input"
                     />
                   </label>
                   <label>
@@ -251,6 +277,7 @@ function App() {
                         updateDependent(index, "lastName", e.target.value)
                       }
                       required
+                      className="form-input"
                     />
                   </label>
                   <label>
@@ -262,6 +289,7 @@ function App() {
                         updateDependent(index, "dob", e.target.value)
                       }
                       required
+                      className="form-input"
                     />
                   </label>
                   <label>
@@ -275,6 +303,7 @@ function App() {
                         updateDependent(index, "ssn", e.target.value)
                       }
                       required
+                      className="form-input"
                     />
                   </label>
                   <button
@@ -296,16 +325,13 @@ function App() {
             </div>
           )}
 
-          <button type="submit" className="btn-continue">
-            Continue
+          <button type="submit" className="btn-submit">
+            Save Changes
           </button>
         </form>
-        <button className="btn-member" onClick={() => setShowLogin(true)}>
-          Already a Member?
-        </button>
       </section>
     </div>
   );
 }
 
-export default App;
+export default Update;
