@@ -155,14 +155,52 @@ app.post("/api/login", (req, res) => {
    });
 });
  
+// // Endpoint to fetch a user by email
+// app.get("/api/user-by-email/:email", (req, res) => {
+//   const { email } = req.params;
+
+//   const sql = `
+//   SELECT HHH_Members.*, Houses.house_total_space
+//   FROM HHH_Members
+//   LEFT JOIN Houses ON HHH_Members.current_address = Houses.address
+//   WHERE HHH_Members.email = ?;
+//   `;
+
+//   db.query(sql, [email], (err, results) => {
+//     if (err) {
+//       console.error("Database query error:", err);
+//       return res.status(500).send("Failed to fetch user data.");
+//     }
+
+//     if (results.length > 0) {
+//       const user = results[0];
+
+//       // Convert DOB to MM/DD/YYYY format for display
+//       const dob = new Date(user.dob);
+//       user.dob = `${dob.getMonth() + 1}/${dob.getDate()}/${dob.getFullYear()}`;
+
+//       try {
+//         user.dependents = user.dependents ? JSON.parse(user.dependents) : [];
+//       } catch (parseError) {
+//         console.error("Error parsing dependents:", parseError);
+//         user.dependents = [];
+//       }
+
+//       res.status(200).send(user);
+//     } else {
+//       res.status(404).send("User not found.");
+//     }
+//   });
+// });
+
 app.get("/api/user-by-email/:email", (req, res) => {
   const { email } = req.params;
 
   const sql = `
-  SELECT HHH_Members.*, Houses.house_total_space
-  FROM HHH_Members
-  LEFT JOIN Houses ON HHH_Members.current_address = Houses.address
-  WHERE HHH_Members.email = ?;
+    SELECT HHH_Members.*, Houses.house_total_space
+    FROM HHH_Members
+    LEFT JOIN Houses ON HHH_Members.current_address = Houses.address
+    WHERE HHH_Members.email = ?;
   `;
 
   db.query(sql, [email], (err, results) => {
@@ -178,12 +216,8 @@ app.get("/api/user-by-email/:email", (req, res) => {
       const dob = new Date(user.dob);
       user.dob = `${dob.getMonth() + 1}/${dob.getDate()}/${dob.getFullYear()}`;
 
-      try {
-        user.dependents = user.dependents ? JSON.parse(user.dependents) : [];
-      } catch (parseError) {
-        console.error("Error parsing dependents:", parseError);
-        user.dependents = [];
-      }
+      // Use the already-parsed dependents value
+      user.dependents = user.dependents || [];
 
       res.status(200).send(user);
     } else {
