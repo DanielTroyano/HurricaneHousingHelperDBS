@@ -324,8 +324,8 @@ function Update() {
               </button>
             </div>
           )}
-
-          <button type="submit" className="btn-submit">
+          
+          <button type="submit" className="btn-save">
             Save Changes
           </button>
         </form>
