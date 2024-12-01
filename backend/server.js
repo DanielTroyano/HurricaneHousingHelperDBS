@@ -155,7 +155,7 @@ app.post("/api/login", (req, res) => {
    });
 });
  
-// Endpoint to update a member's information
+// Endpoint to fetch member data through email
 app.get("/api/user-by-email/:email", (req, res) => {
   const { email } = req.params;
 
@@ -256,6 +256,72 @@ app.post("/api/update-member", (req, res) => {
       });
     }
   );
+});
+
+// Endpoint to delete a member
+app.post("/api/delete-member", (req, res) => {
+  const { ssn, currentAddress } = req.body;
+
+  const clearAddressSQL = `UPDATE HHH_Members SET current_address = NULL WHERE ssn = ?;`;
+  const deleteHouseSQL = `DELETE FROM Houses WHERE address = ? AND guardian_ssn = ?;`;
+  const deleteMemberSQL = `DELETE FROM HHH_Members WHERE ssn = ?;`;
+
+  db.beginTransaction((err) => {
+    if (err) {
+      console.error("Transaction start error:", err);
+      return res.status(500).send("Failed to start transaction.");
+    }
+
+    // Step 1: Clear the `current_address` field in `HHH_Members`
+    db.query(clearAddressSQL, [ssn], (err) => {
+      if (err) {
+        console.error("Error clearing address:", err);
+        return db.rollback(() =>
+          res.status(500).send("Failed to clear address in HHH_Members.")
+        );
+      }
+
+      console.log("Address cleared for member.");
+
+      // Step 2: Delete the house entry
+      db.query(deleteHouseSQL, [currentAddress, ssn], (err) => {
+        if (err) {
+          console.error("Error deleting house:", err);
+          return db.rollback(() =>
+            res.status(500).send("Failed to delete house.")
+          );
+        }
+
+        console.log("House deleted.");
+
+        // Step 3: Delete the member entry
+        db.query(deleteMemberSQL, [ssn], (err) => {
+          if (err) {
+            console.error("Error deleting member:", err);
+            return db.rollback(() =>
+              res.status(500).send("Failed to delete member.")
+            );
+          }
+
+          console.log("Member deleted.");
+
+          // Commit the transaction
+          db.commit((err) => {
+            if (err) {
+              console.error("Transaction commit error:", err);
+              return db.rollback(() =>
+                res.status(500).send("Failed to commit transaction.")
+              );
+            }
+
+            res.status(200).send(
+              "Member and associated house deleted successfully!"
+            );
+          });
+        });
+      });
+    });
+  });
 });
 
 
