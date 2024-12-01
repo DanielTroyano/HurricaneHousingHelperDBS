@@ -186,6 +186,7 @@ const handleSubmit = async (e) => {
               maxLength="11"
               required
               className="form-input"
+              disabled
             />
           </label>
           <label>
@@ -299,11 +300,12 @@ const handleSubmit = async (e) => {
                       placeholder="Dependent's SSN"
                       maxLength="11"
                       value={dependent.ssn}
-                      onChange={(e) =>
-                        updateDependent(index, "ssn", e.target.value)
+                      onChange={(e) =>               
+                      updateDependent(index, "ssn", e.target.value)
                       }
                       required
                       className="form-input"
+                      disabled
                     />
                   </label>
                   <button
