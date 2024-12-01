@@ -95,28 +95,59 @@ function Update() {
     setFormData({ ...formData, dependents: updatedDependents });
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  // Convert DOB to YYYY-MM-DD before sending
-  const formattedDob = new Date(formData.dob).toISOString().split("T")[0];
+    // Convert DOB to YYYY-MM-DD before sending
+    const formattedDob = new Date(formData.dob).toISOString().split("T")[0];
 
-  try {
-    const response = await fetch("http://localhost:8000/api/update-member", {
-      method: "POST", // Or PUT if you prefer RESTful conventions
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...formData,
-        dob: formattedDob, // Send the formatted date
-      }),
-    });
+    try {
+      const response = await fetch("http://localhost:8000/api/update-member", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...formData,
+          dob: formattedDob,
+        }),
+      });
 
-    if (!response.ok) throw new Error("Failed to update user information");
-    alert("Information updated successfully!");
-  } catch (err) {
-    alert(`Error: ${err.message}`);
-  }
-};
+      if (!response.ok) throw new Error("Failed to update user information");
+      alert("Information updated successfully!");
+    } catch (err) {
+      alert(`Error: ${err.message}`);
+    }
+  };
+
+  const handleDelete = async () => {
+    const confirmation = window.confirm(
+      "Are you sure you want to delete your account? This action cannot be undone."
+    );
+
+    if (!confirmation) return;
+
+    try {
+      const response = await fetch("http://localhost:8000/api/delete-member", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ssn: formData.ssn,
+          currentAddress: formData.currentAddress,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorMessage = await response.text();
+        throw new Error(errorMessage || "Failed to delete account");
+      }
+
+      alert("Account deleted successfully!");
+      localStorage.removeItem("userEmail"); // Clear email from localStorage
+      window.location.href = "/"; // Redirect to home or login page
+    } catch (err) {
+      console.error("Error during account deletion:", err);
+      alert(`Error: ${err.message}`);
+    }
+  };
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error}</p>;
@@ -186,6 +217,7 @@ const handleSubmit = async (e) => {
               maxLength="11"
               required
               className="form-input"
+              disabled
             />
           </label>
           <label>
@@ -218,6 +250,7 @@ const handleSubmit = async (e) => {
               onChange={handleChange}
               required
               className="form-textarea"
+              disabled
             />
           </label>
           <label>
@@ -304,6 +337,7 @@ const handleSubmit = async (e) => {
                       }
                       required
                       className="form-input"
+                      disabled
                     />
                   </label>
                   <button
@@ -324,11 +358,14 @@ const handleSubmit = async (e) => {
               </button>
             </div>
           )}
-          
+
           <button type="submit" className="btn-save">
             Save Changes
           </button>
         </form>
+        <button type="button" className="btn-delete" onClick={handleDelete}>
+          Delete Account
+        </button>
       </section>
     </div>
   );
