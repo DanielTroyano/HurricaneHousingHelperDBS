@@ -95,28 +95,28 @@ function Update() {
     setFormData({ ...formData, dependents: updatedDependents });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    // Convert DOB to YYYY-MM-DD before sending
-    const formattedDob = new Date(formData.dob).toISOString().split("T")[0];
+  // Convert DOB to YYYY-MM-DD before sending
+  const formattedDob = new Date(formData.dob).toISOString().split("T")[0];
 
-    try {
-      const response = await fetch("http://localhost:8000/api/update-member", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          dob: formattedDob, // Send the formatted date
-        }),
-      });
+  try {
+    const response = await fetch("http://localhost:8000/api/update-member", {
+      method: "POST", // Or PUT if you prefer RESTful conventions
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...formData,
+        dob: formattedDob, // Send the formatted date
+      }),
+    });
 
-      if (!response.ok) throw new Error("Failed to update user information");
-      alert("Information updated successfully!");
-    } catch (err) {
-      alert(`Error: ${err.message}`);
-    }
-  };
+    if (!response.ok) throw new Error("Failed to update user information");
+    alert("Information updated successfully!");
+  } catch (err) {
+    alert(`Error: ${err.message}`);
+  }
+};
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error}</p>;

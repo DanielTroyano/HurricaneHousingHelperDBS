@@ -155,44 +155,7 @@ app.post("/api/login", (req, res) => {
    });
 });
  
-// // Endpoint to fetch a user by email
-// app.get("/api/user-by-email/:email", (req, res) => {
-//   const { email } = req.params;
-
-//   const sql = `
-//   SELECT HHH_Members.*, Houses.house_total_space
-//   FROM HHH_Members
-//   LEFT JOIN Houses ON HHH_Members.current_address = Houses.address
-//   WHERE HHH_Members.email = ?;
-//   `;
-
-//   db.query(sql, [email], (err, results) => {
-//     if (err) {
-//       console.error("Database query error:", err);
-//       return res.status(500).send("Failed to fetch user data.");
-//     }
-
-//     if (results.length > 0) {
-//       const user = results[0];
-
-//       // Convert DOB to MM/DD/YYYY format for display
-//       const dob = new Date(user.dob);
-//       user.dob = `${dob.getMonth() + 1}/${dob.getDate()}/${dob.getFullYear()}`;
-
-//       try {
-//         user.dependents = user.dependents ? JSON.parse(user.dependents) : [];
-//       } catch (parseError) {
-//         console.error("Error parsing dependents:", parseError);
-//         user.dependents = [];
-//       }
-
-//       res.status(200).send(user);
-//     } else {
-//       res.status(404).send("User not found.");
-//     }
-//   });
-// });
-
+// Endpoint to update a member's information
 app.get("/api/user-by-email/:email", (req, res) => {
   const { email } = req.params;
 
@@ -226,6 +189,74 @@ app.get("/api/user-by-email/:email", (req, res) => {
   });
 });
 
+// Endpoint to update a member's data
+app.post("/api/update-member", (req, res) => {
+  const {
+    firstName,
+    lastName,
+    email,
+    password,
+    ssn,
+    dob,
+    familySize,
+    currentAddress,
+    houseTotalSpace,
+    isHeadOfHousehold,
+    dependents,
+  } = req.body;
+
+  const updateMemberSQL = `
+    UPDATE HHH_Members
+    SET first_name = ?, last_name = ?, email = ?, password = ?, dob = ?,
+        family_size = ?, current_address = ?, is_head_of_household = ?, dependents = ?
+    WHERE ssn = ?;
+  `;
+
+  const updateHouseSQL = `
+    UPDATE Houses
+    SET house_total_space = ?
+    WHERE address = ?;
+  `;
+
+  // Serialize dependents as JSON
+  const serializedDependents =
+    Array.isArray(dependents) && dependents.length > 0
+      ? JSON.stringify(dependents)
+      : "[]";
+
+  // Update member data
+  db.query(
+    updateMemberSQL,
+    [
+      firstName,
+      lastName,
+      email,
+      password,
+      dob,
+      familySize,
+      currentAddress,
+      isHeadOfHousehold ? 1 : 0,
+      serializedDependents,
+      ssn,
+    ],
+    (err) => {
+      if (err) {
+        console.error("Error updating member data:", err);
+        return res.status(500).send("Failed to update member data.");
+      }
+
+      // Update house data
+      db.query(updateHouseSQL, [houseTotalSpace, currentAddress], (err) => {
+        if (err) {
+          console.error("Error updating house data:", err);
+          return res.status(500).send("Failed to update house data.");
+        }
+
+        res.status(200).send("Member and house data updated successfully!");
+      });
+    }
+  );
+});
 
 
 // Start the server
