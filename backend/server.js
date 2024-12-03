@@ -392,6 +392,186 @@ app.post("/api/delete-member", (req, res) => {
   });
 });
 
+app.post("/api/current-address", (req, res) => {
+  const { houseId, refugeAt } = req.body;
+
+  const sql = `
+    SELECT street, city, state, zip_code, is_destroyed
+    FROM Houses
+    WHERE house_id = ?;
+  `;
+
+  const getAddress = (id, callback) => {
+    db.query(sql, [id], (err, results) => {
+      if (err) {
+        console.error("Error fetching house address:", err);
+        return callback(err);
+      }
+      callback(null, results.length > 0 ? results[0] : null);
+    });
+  };
+
+  // First, check the `house_id` of the user
+  if (houseId) {
+    getAddress(houseId, (err, house) => {
+      if (err) return res.status(500).send("Failed to fetch address.");
+
+      // If the house exists and is not destroyed, return its address
+      if (house && !house.is_destroyed) {
+        return res
+          .status(200)
+          .send(`${house.street}, ${house.city}, ${house.state}, ${house.zip_code}`);
+      }
+
+      // If the house is destroyed or does not exist, check `refuge_at`
+      if (refugeAt) {
+        getAddress(refugeAt, (err, refugeHouse) => {
+          if (err) return res.status(500).send("Failed to fetch refuge house address.");
+
+          // If the refuge house exists and is not destroyed, return its address
+          if (refugeHouse && !refugeHouse.is_destroyed) {
+            return res
+              .status(200)
+              .send(
+                `${refugeHouse.street}, ${refugeHouse.city}, ${refugeHouse.state}, ${refugeHouse.zip_code}`
+              );
+          }
+
+          // If both houses are destroyed or unavailable, return no shelter message
+          return res
+            .status(200)
+            .send("You may be without shelter! Click the button to get help!");
+        });
+      } else {
+        // No `refuge_at` provided, fallback to no shelter message
+        return res
+          .status(200)
+          .send("You may be without shelter! Click the button to get help!");
+      }
+    });
+  } else if (refugeAt) {
+    // If no `house_id` but `refuge_at` exists, check `refuge_at` address
+    getAddress(refugeAt, (err, refugeHouse) => {
+      if (err) return res.status(500).send("Failed to fetch refuge house address.");
+
+      // If the refuge house exists and is not destroyed, return its address
+      if (refugeHouse && !refugeHouse.is_destroyed) {
+        return res
+          .status(200)
+          .send(
+            `${refugeHouse.street}, ${refugeHouse.city}, ${refugeHouse.state}, ${refugeHouse.zip_code}`
+          );
+      }
+
+      // If the refuge house is destroyed, return no shelter message
+      return res
+        .status(200)
+        .send("You may be without shelter! Click the button to get help!");
+    });
+  } else {
+    // Neither `house_id` nor `refuge_at` exists
+    res
+      .status(200)
+      .send("You may be without shelter! Click the button to get help!");
+  }
+});
+
+
+app.get("/api/available-houses", (req, res) => {
+  const sql = `
+    SELECT house_id, street, city, state, zip_code, house_space_available
+    FROM Houses
+    WHERE is_destroyed = FALSE;
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error("Error fetching available houses:", err);
+      return res.status(500).send("Failed to fetch available houses.");
+    }
+
+    res.status(200).send(results);
+  });
+});
+
+app.post("/api/select-house", (req, res) => {
+  const { ssn, houseId, familySize } = req.body;
+
+  console.log("Request Data:", { ssn, houseId, familySize }); // Debug log
+
+  // Query to fetch the guardian of the selected house
+  const getHostSQL = `
+    SELECT guardian_ssn
+    FROM Houses
+    WHERE house_id = ?;
+  `;
+
+  // Update the user's displaced status and refuge_at column
+  const updateUserSQL = `
+    UPDATE HHH_Members
+    SET is_displaced = FALSE, refuge_at = ?
+    WHERE ssn = ?;
+  `;
+
+  // Decrement the selected house's available space
+  const updateHouseSQL = `
+    UPDATE Houses
+    SET house_space_available = house_space_available - ?
+    WHERE house_id = ?;
+  `;
+
+  // Insert into `shelter_pairings` table
+  const addPairingSQL = `
+    INSERT INTO shelter_pairings (host, leadRefugeeSSN, shelterID)
+    VALUES (?, ?, ?);
+  `;
+
+  // Step 1: Fetch the host's SSN
+  db.query(getHostSQL, [houseId], (err, results) => {
+    if (err) {
+      console.error("Error fetching host data:", err);
+      return res.status(500).send("Failed to fetch host data.");
+    }
+
+    console.log("Host Query Results:", results); // Debug log
+
+    if (results.length === 0 || !results[0].guardian_ssn) {
+      console.error("Host not found or guardian_ssn is NULL");
+      return res.status(404).send("Host not found or invalid for the selected house.");
+    }
+
+    const hostSSN = results[0].guardian_ssn;
+
+    // Step 2: Update the user's displaced status and refuge_at
+    db.query(updateUserSQL, [houseId, ssn], (err) => {
+      if (err) {
+        console.error("Error updating user data:", err);
+        return res.status(500).send("Failed to update user data.");
+      }
+
+      // Step 3: Update the house's space
+      db.query(updateHouseSQL, [familySize, houseId], (err) => {
+        if (err) {
+          console.error("Error updating house data:", err);
+          return res.status(500).send("Failed to update house data.");
+        }
+
+        // Step 4: Insert into `shelter_pairings`
+        db.query(addPairingSQL, [hostSSN, ssn, houseId], (err) => {
+          if (err) {
+            console.error("Error inserting shelter pairing:", err);
+            return res.status(500).send("Failed to insert shelter pairing.");
+          }
+
+          res.status(200).send("House selected successfully, and pairing created!");
+        });
+      });
+    });
+  });
+});
+
+
+
 
 // Start the server
 app.listen(port, () => {

@@ -132,3 +132,43 @@
 .logout-button {
   color: #dc3545; /* Logout button text color */
 }
+
+.houses-container {
+  margin-top: 20px;
+}
+
+.houses-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.houses-table th,
+.houses-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+}
+
+.houses-table th {
+  background-color: #f4f4f4;
+  font-weight: bold;
+}
+
+.select-button {
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.select-button.enabled {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.select-button.disabled {
+  background-color: #cccccc;
+  color: #666666;
+  cursor: not-allowed;
+}
