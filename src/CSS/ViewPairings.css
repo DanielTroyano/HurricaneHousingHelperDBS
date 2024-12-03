@@ -1,0 +1,47 @@
+.pairings-container {
+  margin: 20px;
+  padding: 20px;
+}
+
+.pairings-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.pairings-table th,
+.pairings-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.pairings-table th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+.no-shelter {
+  background-color: #ffe6e6;
+  /* Light red for people without shelter */
+  color: red;
+}
+
+.error-message {
+  color: red;
+  margin-top: 10px;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.filter-controls {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}

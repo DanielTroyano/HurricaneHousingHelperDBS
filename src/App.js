@@ -6,6 +6,7 @@ import "./App.css";
 import Hub from "./Pages/Hub";
 import Login from "./Pages/Login";
 import Update from "./Pages/Update";
+import ViewPairings from "./Pages/ViewPairings";
 
 function App() {
   const [formData, setFormData] = useState({
@@ -112,6 +113,10 @@ function App() {
 
   if (window.location.pathname === "/Update") {
     return <Update />;
+  }
+
+  if (window.location.pathname === "/ViewPairings") {
+    return <ViewPairings />;
   }
 
   if (showLogin) {

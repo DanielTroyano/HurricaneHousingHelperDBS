@@ -71,6 +71,10 @@ function Hub({ formData }) {
     window.location.href = "/Update";
   };
 
+  const navigateToPairings = () => {
+    window.location.href = "/ViewPairings"; // Navigate to the new page
+  };  
+
   const handleLogout = () => {
     localStorage.removeItem("userEmail");
     window.location.href = "/";
@@ -112,21 +116,27 @@ function Hub({ formData }) {
           />
         </button>
         {showDropdown && (
-          <div className="dropdown-menu">
-            <ul>
-              <li>
-                <button className="update-button" onClick={navigateToUpdate}>
-                  Update Information
-                </button>
-              </li>
-              <li>
-                <button className="logout-button" onClick={handleLogout}>
-                  Logout
-                </button>
-              </li>
-            </ul>
-          </div>
-        )}
+  <div className="dropdown-menu">
+    <ul>
+      <li>
+        <button className="update-button" onClick={navigateToUpdate}>
+          Update Information
+        </button>
+      </li>
+      <li>
+        <button className="view-pairings-button" onClick={() => navigateToPairings()}>
+          View Shelter Pairings
+        </button>
+      </li>
+      <li>
+        <button className="logout-button" onClick={handleLogout}>
+          Logout
+        </button>
+      </li>
+    </ul>
+  </div>
+)}
+
       </div>
 
       <div className="hub-header">

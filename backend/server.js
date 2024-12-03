@@ -396,7 +396,7 @@ app.post("/api/current-address", (req, res) => {
   const { houseId, refugeAt } = req.body;
 
   const sql = `
-    SELECT street, city, state, zip_code, is_destroyed
+    SELECT house_id, street, city, state, zip_code, is_destroyed
     FROM Houses
     WHERE house_id = ?;
   `;
@@ -411,70 +411,47 @@ app.post("/api/current-address", (req, res) => {
     });
   };
 
-  // First, check the `house_id` of the user
+  // Check the `house_id` first
   if (houseId) {
     getAddress(houseId, (err, house) => {
       if (err) return res.status(500).send("Failed to fetch address.");
-
-      // If the house exists and is not destroyed, return its address
       if (house && !house.is_destroyed) {
         return res
           .status(200)
-          .send(`${house.street}, ${house.city}, ${house.state}, ${house.zip_code}`);
+          .send(`Safe and protected at your original house: ${house.street}, ${house.city}, ${house.state}, ${house.zip_code}`);
       }
 
-      // If the house is destroyed or does not exist, check `refuge_at`
+      // Check the `refuge_at` if `house_id` is destroyed
       if (refugeAt) {
         getAddress(refugeAt, (err, refugeHouse) => {
           if (err) return res.status(500).send("Failed to fetch refuge house address.");
-
-          // If the refuge house exists and is not destroyed, return its address
           if (refugeHouse && !refugeHouse.is_destroyed) {
             return res
               .status(200)
-              .send(
-                `${refugeHouse.street}, ${refugeHouse.city}, ${refugeHouse.state}, ${refugeHouse.zip_code}`
-              );
+              .send(`Currently a refuge at: ${refugeHouse.street}, ${refugeHouse.city}, ${refugeHouse.state}, ${refugeHouse.zip_code}`);
           }
-
-          // If both houses are destroyed or unavailable, return no shelter message
-          return res
-            .status(200)
-            .send("You may be without shelter! Click the button to get help!");
+          return res.status(200).send("You may be without shelter! Click the button to get help!");
         });
       } else {
-        // No `refuge_at` provided, fallback to no shelter message
-        return res
-          .status(200)
-          .send("You may be without shelter! Click the button to get help!");
+        return res.status(200).send("You may be without shelter! Click the button to get help!");
       }
     });
   } else if (refugeAt) {
-    // If no `house_id` but `refuge_at` exists, check `refuge_at` address
+    // Check `refuge_at` if no `house_id`
     getAddress(refugeAt, (err, refugeHouse) => {
       if (err) return res.status(500).send("Failed to fetch refuge house address.");
-
-      // If the refuge house exists and is not destroyed, return its address
       if (refugeHouse && !refugeHouse.is_destroyed) {
         return res
           .status(200)
-          .send(
-            `${refugeHouse.street}, ${refugeHouse.city}, ${refugeHouse.state}, ${refugeHouse.zip_code}`
-          );
+          .send(`Currently a refuge at: ${refugeHouse.street}, ${refugeHouse.city}, ${refugeHouse.state}, ${refugeHouse.zip_code}`);
       }
-
-      // If the refuge house is destroyed, return no shelter message
-      return res
-        .status(200)
-        .send("You may be without shelter! Click the button to get help!");
+      return res.status(200).send("You may be without shelter! Click the button to get help!");
     });
   } else {
-    // Neither `house_id` nor `refuge_at` exists
-    res
-      .status(200)
-      .send("You may be without shelter! Click the button to get help!");
+    res.status(200).send("You may be without shelter! Click the button to get help!");
   }
 });
+
 
 
 app.get("/api/available-houses", (req, res) => {
@@ -569,6 +546,61 @@ app.post("/api/select-house", (req, res) => {
     });
   });
 });
+
+app.get("/api/shelter-pairings", (req, res) => {
+  const { search = "", status = "" } = req.query;
+
+  // Split the status filter into an array
+  const statusFilters = status ? status.split(",") : [];
+
+  // Build the query
+  const sql = `
+    SELECT * FROM (
+      SELECT 
+        m.ssn,
+        m.first_name,
+        m.last_name,
+        CASE 
+          WHEN h.is_destroyed = FALSE THEN CONCAT(h.street, ', ', h.city, ', ', h.state, ' ', h.zip_code)
+          WHEN m.refuge_at IS NOT NULL THEN CONCAT(r.street, ', ', r.city, ', ', r.state, ' ', r.zip_code)
+          ELSE 'You may be without shelter!'
+        END AS current_address,
+        CASE 
+          WHEN h.is_destroyed = FALSE THEN 'Safe in original house'
+          WHEN m.refuge_at IS NOT NULL THEN 'Refugee in another house'
+          ELSE 'without shelter'
+        END AS status
+      FROM HHH_Members m
+      LEFT JOIN Houses h ON m.house_id = h.house_id
+      LEFT JOIN Houses r ON m.refuge_at = r.house_id
+    ) AS results
+    WHERE (
+      first_name LIKE ? OR
+      last_name LIKE ? OR
+      current_address LIKE ?
+    )
+    ${statusFilters.length > 0 ? "AND status IN (" + statusFilters.map(() => "?").join(", ") + ")" : ""}
+  `;
+
+  // Prepare the query parameters
+  const queryParams = [
+    `%${search}%`, // Search for first_name
+    `%${search}%`, // Search for last_name
+    `%${search}%`, // Search for address
+    ...statusFilters, // Add each status filter
+  ];
+
+  // Execute the query
+  db.query(sql, queryParams, (err, results) => {
+    if (err) {
+      console.error("Error fetching shelter pairings:", err);
+      return res.status(500).send("Failed to fetch shelter pairings.");
+    }
+    res.status(200).send(results);
+  });
+});
+
+
 
 
 
