@@ -380,7 +380,6 @@ function Update() {
                       }
                       required
                       className="form-input"
-                      disabled
                     />
                   </label>
                   <button

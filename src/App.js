@@ -75,6 +75,28 @@ function App() {
       return;
     }
 
+    // Validate DOB is at least 18 years ago
+  const dobDate = new Date(formData.dob);
+  const currentDate = new Date();
+  const age = currentDate.getFullYear() - dobDate.getFullYear();
+  const monthDiff = currentDate.getMonth() - dobDate.getMonth();
+  const dayDiff = currentDate.getDate() - dobDate.getDate();
+  if (age < 18 || (age === 18 && (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)))) {
+    alert("You must be at least 18 years old to join.");
+    return;
+  }
+
+  // Validate familySize and houseTotalSpace are nonnegative
+  if (formData.familySize < 0) {
+    alert("Family size cannot be negative.");
+    return;
+  }
+  if (formData.houseTotalSpace < 0) {
+    alert("Total house space cannot be negative.");
+    return;
+  }
+
+
     try {
       const response = await axios.post(
         "http://localhost:8000/api/add-member",

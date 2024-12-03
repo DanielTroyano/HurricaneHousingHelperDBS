@@ -135,23 +135,47 @@ app.post("/api/add-member", (req, res) => {
  
 // Endpoint to toggle a member's displaced status
 app.post("/api/toggle-displaced", (req, res) => {
- const { ssn, isDisplaced } = req.body;
+  const { ssn, isDisplaced } = req.body;
 
- const sql = `
-   UPDATE HHH_Members
-   SET is_displaced = ?
-   WHERE ssn = ?;
- `;
+  // Update is_displaced in HHH_Members and is_destroyed in Houses
+  const updateMemberSQL = `
+    UPDATE HHH_Members
+    SET is_displaced = ?
+    WHERE ssn = ?;
+  `;
 
- db.query(sql, [isDisplaced, ssn], (err) => {
-   if (err) {
-     console.error("Error updating displaced status:", err);
-     return res.status(500).send("Failed to update displaced status.");
-   }
+  const updateHouseSQL = `
+    UPDATE Houses
+    SET is_destroyed = ?
+    WHERE house_id = (
+      SELECT house_id
+      FROM HHH_Members
+      WHERE ssn = ?
+    );
+  `;
 
-   res.status(200).send("Displaced status updated successfully!");
- });
+  // Update the member's displaced status
+  db.query(updateMemberSQL, [isDisplaced, ssn], (err) => {
+    if (err) {
+      console.error("Error updating displaced status:", err);
+      return res.status(500).send("Failed to update displaced status.");
+    }
+
+    // Update the house's destroyed status
+    const isDestroyed = isDisplaced; // Synchronize house status with displaced status
+    db.query(updateHouseSQL, [isDestroyed, ssn], (err) => {
+      if (err) {
+        console.error("Error updating house destroyed status:", err);
+        return res
+          .status(500)
+          .send("Failed to update house destroyed status.");
+      }
+
+      res.status(200).send("Displaced and house statuses updated successfully!");
+    });
+  });
 });
+
 
 // Endpoint to login a member
 app.post("/api/login", (req, res) => {
