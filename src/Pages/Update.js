@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../CSS/Update.css"; // Ensure CSS is applied
+import Hub from "./Hub";
 
 function Update() {
   const [formData, setFormData] = useState({
@@ -10,7 +11,10 @@ function Update() {
     ssn: "",
     dob: "",
     familySize: 0,
-    currentAddress: "",
+    street: "",
+    city: "",
+    state: "",
+    zipCode: "",
     houseTotalSpace: 0,
     isHeadOfHousehold: true,
     dependents: [],
@@ -18,6 +22,7 @@ function Update() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [savedChanges, setSavedChanges] = useState(false);
 
   const userEmail = localStorage.getItem("userEmail");
 
@@ -28,22 +33,22 @@ function Update() {
         setLoading(false);
         return;
       }
-
+  
       try {
         const response = await fetch(
           `http://localhost:8000/api/user-by-email/${userEmail}`
         );
         if (!response.ok) throw new Error("Failed to fetch user data");
-
+  
         const userData = await response.json();
-
+  
         console.log("Fetched user data:", userData); // Debugging line
-
+  
         // Convert DOB to YYYY-MM-DD format for the input field
         const dobParts = userData.dob.split("/");
         const formattedDob = `${dobParts[2]}-${dobParts[0].padStart(2, "0")}-${dobParts[1].padStart(2, "0")}`;
-
-        // Set all formData fields, including the formatted DOB
+  
+        // Set all formData fields, including the formatted DOB and address components
         setFormData({
           firstName: userData.first_name,
           lastName: userData.last_name,
@@ -52,12 +57,15 @@ function Update() {
           ssn: userData.ssn,
           dob: formattedDob,
           familySize: userData.family_size,
-          currentAddress: userData.current_address,
+          street: userData.street,
+          city: userData.city,
+          state: userData.state,
+          zipCode: userData.zip_code,
           houseTotalSpace: userData.house_total_space,
           isHeadOfHousehold: Boolean(userData.is_head_of_household),
           dependents: userData.dependents || [],
         });
-
+  
         setLoading(false);
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -65,9 +73,10 @@ function Update() {
         setLoading(false);
       }
     };
-
+  
     fetchUserData();
   }, [userEmail]);
+  
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -113,6 +122,7 @@ function Update() {
 
       if (!response.ok) throw new Error("Failed to update user information");
       alert("Information updated successfully!");
+      setSavedChanges(true);
     } catch (err) {
       alert(`Error: ${err.message}`);
     }
@@ -131,7 +141,7 @@ function Update() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ssn: formData.ssn,
-          currentAddress: formData.currentAddress,
+          house_id: formData.house_id,
         }),
       });
 
@@ -151,6 +161,10 @@ function Update() {
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error}</p>;
+
+  if (savedChanges && formData) {
+    return <Hub formData={formData} />;
+  }
 
   return (
     <div className="update-container">
@@ -242,17 +256,46 @@ function Update() {
               className="form-input"
             />
           </label>
-          <label>
-            Current Address:
-            <textarea
-              name="currentAddress"
-              value={formData.currentAddress}
-              onChange={handleChange}
-              required
-              className="form-textarea"
-              disabled
-            />
-          </label>
+      <label>
+        Street:
+        <input
+          type="text"
+          name="street"
+          value={formData.street}
+          onChange={handleChange}
+          required
+        />
+      </label>
+      <label>
+        City:
+        <input
+          type="text"
+          name="city"
+          value={formData.city}
+          onChange={handleChange}
+          required
+        />
+      </label>
+      <label>
+        State:
+        <input
+          type="text"
+          name="state"
+          value={formData.state}
+          onChange={handleChange}
+          required
+        />
+      </label>
+      <label>
+        ZIP Code:
+        <input
+          type="text"
+          name="zipCode"
+          value={formData.zipCode}
+          onChange={handleChange}
+          required
+        />
+      </label>
           <label>
             Total Space of the House:
             <input

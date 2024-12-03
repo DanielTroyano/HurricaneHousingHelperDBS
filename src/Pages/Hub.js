@@ -5,6 +5,8 @@ import "../CSS/Hub.css"; // Assuming you have this CSS file for styling.
 function Hub({ formData }) {
   const dependents = formData.dependents || [];
 
+  localStorage.setItem("userEmail", formData.email);
+
   const [showDropdown, setShowDropdown] = useState(false);
   const [isDisplaced, setIsDisplaced] = useState(formData.is_displaced || false);
 
@@ -28,6 +30,14 @@ function Hub({ formData }) {
   const navigateToUpdate = () => {
   window.location.href = "/Update"; // Navigate to the update page
   };
+
+  const handleLogout = () => {
+    // Remove the user's email from localStorage
+    localStorage.removeItem("userEmail");
+  
+    // Navigate to the main page
+    window.location.href = "/";
+  };
   
   return (
     <div className="hub-container">
@@ -41,14 +51,21 @@ function Hub({ formData }) {
           />
         </button>
         {showDropdown && (
-          <div className="dropdown-menu">
-            <ul>
-              <button className="update-button" onClick={navigateToUpdate}>
-                <li>Update Information</li>
-              </button>
-            </ul>
-          </div>
-        )}
+  <div className="dropdown-menu">
+    <ul>
+      <li>
+        <button className="update-button" onClick={navigateToUpdate}>
+          Update Information
+        </button>
+      </li>
+      <li>
+        <button className="logout-button" onClick={handleLogout}>
+          Logout
+        </button>
+      </li>
+    </ul>
+  </div>
+)}
       </div>
       {/*  */}
       

@@ -82,8 +82,53 @@
     }
 
     /*  Css for drop down */
-    .dropdown-menu {
-      position: absolute;
-      left: 628px;
+    /* Dropdown menu styles */
+.dropdown-menu {
+  position: absolute;
+  left: 628px;
+  top: 100%; /* Ensures the menu appears directly below */
+  background-color: white; /* White background */
+  border: 1px solid #ccc; /* Light border for a polished look */
+  border-radius: 5px; /* Slight rounding for corners */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+  width: 200px; /* Adjust width as needed */
+  z-index: 1000; /* Ensure dropdown appears above other content */
+  padding: 0; /* Remove padding */
+}
 
-    }
+/* List styles */
+.dropdown-menu ul {
+  list-style: none; /* Remove bullet points */
+  margin: 0;
+  padding: 0;
+}
+
+/* List item styles */
+.dropdown-menu li {
+  padding: 10px 15px; /* Add spacing inside each item */
+  text-align: center; /* Center align text */
+}
+
+.dropdown-menu li button {
+  width: 100%; /* Full width */
+  padding: 10px;
+  border: none;
+  background: none;
+  font-size: 16px;
+  cursor: pointer;
+  text-align: left; /* Align text to the left */
+  color: #333;
+}
+
+.dropdown-menu li button:hover {
+  background-color: #f0f0f0; /* Highlight item on hover */
+}
+
+/* Optional: Different colors for buttons */
+.update-button {
+  color: #007bff; /* Update button text color */
+}
+
+.logout-button {
+  color: #dc3545; /* Logout button text color */
+}

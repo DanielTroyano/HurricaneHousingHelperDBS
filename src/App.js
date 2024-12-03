@@ -16,7 +16,10 @@ function App() {
     ssn: "",
     dob: "",
     familySize: 0,
-    currentAddress: "",
+    street: "",
+    city: "",
+    state: "",
+    zipCode: "",
     houseTotalSpace: 0, // New field
     isHeadOfHousehold: true,
     dependents: [],
@@ -63,7 +66,10 @@ function App() {
       !formData.ssn ||
       !formData.dob ||
       !formData.familySize ||
-      !formData.currentAddress
+      !formData.street ||
+      !formData.city ||
+      !formData.state ||
+      !formData.zipCode
     ) {
       alert("Please fill out all required fields.");
       return;
@@ -187,15 +193,47 @@ function App() {
               required
             />
           </label>
-          <label>
-            Current Address:
-            <textarea
-              name="currentAddress"
-              value={formData.currentAddress}
-              onChange={handleChange}
-              required
-            />
-          </label>
+<p>Home Address:</p>
+<label>
+  Street:
+  <input
+    type="text"
+    name="street"
+    value={formData.street}
+    onChange={handleChange}
+    required
+  />
+</label>
+<label>
+  City:
+  <input
+    type="text"
+    name="city"
+    value={formData.city}
+    onChange={handleChange}
+    required
+  />
+</label>
+<label>
+  State:
+  <input
+    type="text"
+    name="state"
+    value={formData.state}
+    onChange={handleChange}
+    required
+  />
+</label>
+<label>
+  Zip Code:
+  <input
+    type="text"
+    name="zipCode"
+    value={formData.zipCode}
+    onChange={handleChange}
+    required
+  />
+</label>
           <label>
           Total Space of the House:
           <input

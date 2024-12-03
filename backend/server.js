@@ -32,79 +32,106 @@ db.connect((err) => {
 
 // Endpoint to insert a new member
 app.post("/api/add-member", (req, res) => {
-   const {
-     firstName,
-     lastName,
-     email,
-     password,
-     ssn,
-     dob,
-     familySize,
-     currentAddress,
-     houseTotalSpace,
-     isHeadOfHousehold,
-     dependents,
-   } = req.body;
-    const addHouseSQL = `
-     INSERT INTO Houses (address, guardian_ssn, house_total_space, is_destroyed)
-     VALUES (?, NULL, ?, FALSE)
-     ON DUPLICATE KEY UPDATE house_total_space = VALUES(house_total_space);
-   `;
-    const addMemberSQL = `
-     INSERT INTO HHH_Members (
-       first_name, last_name, email, password, ssn, dob,
-       family_size, current_address, is_head_of_household, dependents
-     )
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-   `;
-    const updateHouseSQL = `
-     UPDATE Houses SET guardian_ssn = ? WHERE address = ?;
-   `;
-    // Ensure dependents are serialized as JSON
-   const serializedDependents =
- Array.isArray(dependents) && dependents.length > 0
-   ? JSON.stringify(dependents)
-   : '[]';
+  const {
+    firstName,
+    lastName,
+    email,
+    password,
+    ssn,
+    dob,
+    familySize,
+    street,
+    city,
+    state,
+    zipCode,
+    houseTotalSpace,
+    isHeadOfHousehold,
+    dependents,
+  } = req.body;
+
+  const serializedDependents =
+    Array.isArray(dependents) && dependents.length > 0
+      ? JSON.stringify(dependents)
+      : "[]";
+
+  // Insert into Houses table
+  const addHouseSQL = `
+    INSERT INTO Houses (street, city, state, zip_code, house_total_space, house_space_available, is_destroyed)
+    VALUES (?, ?, ?, ?, ?, ?, FALSE)
+  `;
+
+  // Insert into HHH_Members table
+  const addMemberSQL = `
+    INSERT INTO HHH_Members (
+      first_name, last_name, email, password, ssn, dob, family_size, house_id,
+      is_head_of_household, dependents
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `;
+
+  // Update guardian_ssn in the Houses table
+  const updateGuardianSQL = `
+    UPDATE Houses
+    SET guardian_ssn = ?
+    WHERE house_id = ?
+  `;
+
+  // Calculate `house_space_available` dynamically
+  const houseSpaceAvailable = houseTotalSpace - familySize;
+
+  // Insert data into Houses table
+  db.query(
+    addHouseSQL,
+    [street, city, state, zipCode, houseTotalSpace, houseSpaceAvailable],
+    (err, houseResult) => {
+      if (err) {
+        console.error("Error inserting house data:", err);
+        return res.status(500).send(`Failed to add house. ${err.message}`);
+      }
+
+      const houseId = houseResult.insertId; // Get the generated house_id
+
+      // Insert data into HHH_Members table
+      db.query(
+        addMemberSQL,
+        [
+          firstName,
+          lastName,
+          email,
+          password,
+          ssn,
+          dob,
+          familySize,
+          houseId, // Link the house_id
+          isHeadOfHousehold ? 1 : 0,
+          serializedDependents,
+        ],
+        (err) => {
+          if (err) {
+            console.error("Error inserting member data:", err);
+            return res.status(500).send(`Failed to add member. ${err.message}`);
+          }
+
+          // Update guardian_ssn in Houses table
+          db.query(updateGuardianSQL, [ssn, houseId], (err) => {
+            if (err) {
+              console.error("Error updating guardian_ssn in house:", err);
+              return res
+                .status(500)
+                .send(`Failed to update guardian_ssn. ${err.message}`);
+            }
+
+            res
+              .status(200)
+              .send("Member and house added successfully with guardian_ssn!");
+          });
+        }
+      );
+    }
+  );
+});
 
 
-    // Insert the house first
-   db.query(addHouseSQL, [currentAddress, houseTotalSpace], (err) => {
-     if (err) {
-       console.error("Error inserting house data:", err);
-       return res.status(500).send(`Failed to add house. ${err.message}`);
-     }
-      // Insert the member
-     db.query(
-       addMemberSQL,
-       [
-         firstName,
-         lastName,
-         email,
-         password,
-         ssn,
-         dob,
-         familySize,
-         currentAddress,
-         isHeadOfHousehold ? 1 : 0,
-         serializedDependents,
-       ],
-       (err) => {
-         if (err) {
-           console.error("Error inserting member data:", err);
-           return res.status(500).send(`Failed to add member. ${err.message}`);
-         }
-          // Update the house with the guardian_ssn
-         db.query(updateHouseSQL, [ssn, currentAddress], (err) => {
-           if (err) {
-             console.error("Error updating house data:", err);
-             return res.status(500).send(`Failed to update house. ${err.message}`);
-           }
-            res.status(200).send("Member and house added successfully!");
-         });
-       }
-     );
-   });
- });
  
 // Endpoint to toggle a member's displaced status
 app.post("/api/toggle-displaced", (req, res) => {
@@ -160,9 +187,14 @@ app.get("/api/user-by-email/:email", (req, res) => {
   const { email } = req.params;
 
   const sql = `
-    SELECT HHH_Members.*, Houses.house_total_space
+    SELECT HHH_Members.*, 
+           Houses.house_total_space, 
+           Houses.street, 
+           Houses.city, 
+           Houses.state, 
+           Houses.zip_code
     FROM HHH_Members
-    LEFT JOIN Houses ON HHH_Members.current_address = Houses.address
+    LEFT JOIN Houses ON HHH_Members.house_id = Houses.house_id
     WHERE HHH_Members.email = ?;
   `;
 
@@ -179,8 +211,13 @@ app.get("/api/user-by-email/:email", (req, res) => {
       const dob = new Date(user.dob);
       user.dob = `${dob.getMonth() + 1}/${dob.getDate()}/${dob.getFullYear()}`;
 
-      // Use the already-parsed dependents value
-      user.dependents = user.dependents || [];
+      // Parse dependents if available
+      try {
+        user.dependents = user.dependents ? JSON.parse(user.dependents) : [];
+      } catch (parseError) {
+        console.error("Error parsing dependents:", parseError);
+        user.dependents = [];
+      }
 
       res.status(200).send(user);
     } else {
@@ -188,6 +225,7 @@ app.get("/api/user-by-email/:email", (req, res) => {
     }
   });
 });
+
 
 // Endpoint to update a member's data
 app.post("/api/update-member", (req, res) => {
@@ -199,7 +237,10 @@ app.post("/api/update-member", (req, res) => {
     ssn,
     dob,
     familySize,
-    currentAddress,
+    street,
+    city,
+    state,
+    zipCode,
     houseTotalSpace,
     isHeadOfHousehold,
     dependents,
@@ -208,23 +249,23 @@ app.post("/api/update-member", (req, res) => {
   const updateMemberSQL = `
     UPDATE HHH_Members
     SET first_name = ?, last_name = ?, email = ?, password = ?, dob = ?,
-        family_size = ?, current_address = ?, is_head_of_household = ?, dependents = ?
-    WHERE ssn = ?;
+        family_size = ?, is_head_of_household = ?, dependents = ?
+    WHERE ssn = ?
   `;
 
   const updateHouseSQL = `
     UPDATE Houses
-    SET house_total_space = ?
-    WHERE address = ?;
+    SET street = ?, city = ?, state = ?, zip_code = ?, house_total_space = ?, house_space_available = ?
+    WHERE guardian_ssn = ?
   `;
 
-  // Serialize dependents as JSON
+  const houseSpaceAvailable = houseTotalSpace - familySize;
+
   const serializedDependents =
     Array.isArray(dependents) && dependents.length > 0
       ? JSON.stringify(dependents)
       : "[]";
 
-  // Update member data
   db.query(
     updateMemberSQL,
     [
@@ -234,7 +275,6 @@ app.post("/api/update-member", (req, res) => {
       password,
       dob,
       familySize,
-      currentAddress,
       isHeadOfHousehold ? 1 : 0,
       serializedDependents,
       ssn,
@@ -245,18 +285,22 @@ app.post("/api/update-member", (req, res) => {
         return res.status(500).send("Failed to update member data.");
       }
 
-      // Update house data
-      db.query(updateHouseSQL, [houseTotalSpace, currentAddress], (err) => {
-        if (err) {
-          console.error("Error updating house data:", err);
-          return res.status(500).send("Failed to update house data.");
-        }
+      db.query(
+        updateHouseSQL,
+        [street, city, state, zipCode, houseTotalSpace, houseSpaceAvailable, ssn],
+        (err) => {
+          if (err) {
+            console.error("Error updating house data:", err);
+            return res.status(500).send("Failed to update house data.");
+          }
 
-        res.status(200).send("Member and house data updated successfully!");
-      });
+          res.status(200).send("Member and house data updated successfully!");
+        }
+      );
     }
   );
 });
+
 
 // Endpoint to delete a member
 app.post("/api/delete-member", (req, res) => {
